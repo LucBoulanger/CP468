@@ -1,4 +1,4 @@
-class Sudoku():
+class SudokuCSP():
     '''
         - self.domain -> 3d list with [row][col][domain for variable[row][col]]
         - self.values -> 2d array of current sudoku values. 
@@ -9,6 +9,7 @@ class Sudoku():
     def __init__(self, file):
         self.domain = []
         self.values = []
+        self.arcs = []
         row = 0
         for line in file:
             self.domain.append([])
@@ -21,7 +22,26 @@ class Sudoku():
                     else:
                         self.domain[row].append([int(char)])
             row += 1
-            
+
+    '''
+    Since all constraints are between two integers, 
+    I think we can just define this function to 
+    compare them.
+    Anytime you need to check constraints on two 
+    variables, just send them here.
+    '''
+    def constraintSatisfy(self, Xi, Xj):
+        return Xi != Xj
+        
+    def getRowNeighbors(self):
+        return []
+    
+    def getColNeighbors(self):
+        return []
+    
+    def getBoxNeighbors(self):
+        return []
+      
     def printDomain(self):
         for i in range (0,9):
             for j in range (0,9):
@@ -36,8 +56,10 @@ class Sudoku():
                 s+= self.values[i][j] + "|"
             s += "\n"
         return s
-sudoku = Sudoku(open("data\Testing1.txt", "r"))
+        
+
+sudoku = SudokuCSP(open("data\Testing1.txt", "r"))
 print("---------------------------\nCurrent Sudoku Problem: \n---------------------------")
 print(sudoku)
-print("---------------------------\nDomain for each Variable: \n---------------------------")
-sudoku.printDomain()
+#print("---------------------------\nDomain for each Variable: \n---------------------------")
+s#udoku.printDomain()

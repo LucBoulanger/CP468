@@ -1,4 +1,4 @@
-from queue import Queue
+from collections import deque
 
 class SudokuCSP():
     '''
@@ -28,13 +28,16 @@ class SudokuCSP():
     Initial list of all possible arcs.
     Arcs are expressed as dictionary where Key = (x, y), Value = [Neighbors...]
         - thus all values in the sudoku puzzle are given arcs to their neighbors
+        - this is used to gather all neighbors of a given value when needed.
     '''
     def populateArcs(self):
         for key in self.arcs:
             for i in range(0,9):
                 for j in range(0,9):
                     if (i != key[0] or j != key[1]) and (i == key[0] or j == key[1] or (i in range((key[0]//3)*3,(key[0]//3)*3+3) and j in range((key[1]//3)*3,(key[1]//3)*3+3))):
-                        self.arcs[key].append((i,j))              
+                        # clears some unnecessary arcs that don't need to be checked as they are already established 
+                        if not (len(self.domain[key]) == 1 and len(self.domain[(i,j)]) == 1):
+                            self.arcs[key].append((i,j))              
         total = 0
         for key in self.arcs: 
             self.arcs[key] = list(set(self.arcs[key]))
@@ -98,19 +101,20 @@ Returns True or False dependent upon whether the algorithm failed or not.
 '''        
 def AC3_Main(csp):   
     #initiate a queue to store all current arcs
-    queue = Queue()
+    queue = deque()
     for key in csp.arcs:
         for neighbor in csp.arcs[key]:
-            queue.put((key, neighbor))
+            queue.append((key, neighbor))
     
     #iterate through queue until it isnt empty
-    while not queue.empty():
-        i,j = queue.get()
+    while queue:
+        #print("Queue length: {}".format(len(queue)))
+        i,j = queue.popleft()
         if AC3_Revise(csp, i,j):
             if len(csp.domain[i]) == 0:
                 return False
             for key in csp.arcs[i]:
-                queue.put((key, i))
+                queue.append((key, i))
     return True
     
 def AC3_Revise(csp, i, j):
@@ -129,7 +133,11 @@ def AC3_Revise(csp, i, j):
             csp.domain[i].remove(x)
     return revised
         
-sudoku = SudokuCSP(open("data\Testing1.txt", "r"))
+        
+
+fileName = input("Which sudoku file to open? ")
+        
+sudoku = SudokuCSP(open("data/"+fileName, "r"))
 print("---------------------------\nCurrent Sudoku Problem: \n---------------------------")
 print(sudoku)
 print("Sudoku solved? {}\n".format(sudoku.isSolved()))

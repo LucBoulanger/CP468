@@ -37,7 +37,10 @@ class SudokuCSP():
                     if (i != key[0] or j != key[1]) and (i == key[0] or j == key[1] or (i in range((key[0]//3)*3,(key[0]//3)*3+3) and j in range((key[1]//3)*3,(key[1]//3)*3+3))):
                         # clears some unnecessary arcs that don't need to be checked as they are already established 
                         if not (len(self.domain[key]) == 1 and len(self.domain[(i,j)]) == 1):
-                            self.arcs[key].append((i,j))              
+                            self.arcs[key].append((i,j))
+                        elif self.domain[key][0] == self.domain[(i,j)][0]:
+                            print("Invalid sudoku puzzle, exiting program.")
+                            exit()
         total = 0
         for key in self.arcs: 
             self.arcs[key] = list(set(self.arcs[key]))

@@ -2,18 +2,18 @@ from collections import deque
 
 class SudokuCSP():
     '''
-        domain = dictionary where Key = (x, y), Value = [domain]
-        arcs   = dictionary where Key = (x, y), Value = [Neighbors...]
+        domain      = dictionary where Key = (x, y), Value = [domain]
+        constraints = dictionary where Key = (x, y), Value = [Neighbors...]
     '''
     def __init__(self, file):
         self.domain = {}
-        self.arcs = {}
+        self.constraints = {}
         x = 0
         y = 0
         for line in file:
             for char in line:
                 if char != "\n":
-                    self.arcs[(x,y)] = []
+                    self.constraints[(x,y)] = []
                     if char == "*":
                         self.domain[(x,y)] = [1,2,3,4,5,6,7,8,9]
                     else:
@@ -21,31 +21,31 @@ class SudokuCSP():
                 y += 1
             x += 1
             y = 0
-        self.populateArcs()    
+        self.populateConstraints()    
         return    
     
     '''
-    Initial list of all possible arcs.
-    Arcs are expressed as dictionary where Key = (x, y), Value = [Neighbors...]
-        - thus all values in the sudoku puzzle are given arcs to their neighbors
+    Initial list of all possible constraint arcs.
+    Constraint arcs are expressed as dictionary where Key = (x, y), Value = [Neighbors...]
+        - thus all values in the sudoku puzzle are given constraints to their neighbors
         - this is used to gather all neighbors of a given value when needed.
     '''
-    def populateArcs(self):
-        for key in self.arcs:
+    def populateConstraints(self):
+        for key in self.constraints:
             for i in range(0,9):
                 for j in range(0,9):
                     if (i != key[0] or j != key[1]) and (i == key[0] or j == key[1] or (i in range((key[0]//3)*3,(key[0]//3)*3+3) and j in range((key[1]//3)*3,(key[1]//3)*3+3))):
-                        # clears some unnecessary arcs that don't need to be checked as they are already established 
+                        # clears some unnecessary constraints that don't need to be checked as they are already established 
                         if not (len(self.domain[key]) == 1 and len(self.domain[(i,j)]) == 1):
-                            self.arcs[key].append((i,j))
+                            self.constraints[key].append((i,j))
                         elif self.domain[key][0] == self.domain[(i,j)][0]:
                             print("Invalid sudoku puzzle, exiting program.")
                             exit()
         total = 0
-        for key in self.arcs: 
-            self.arcs[key] = list(set(self.arcs[key]))
-        for key in self.arcs:
-            total += len(self.arcs[key])
+        for key in self.constraints: 
+            self.constraints[key] = list(set(self.constraints[key]))
+        for key in self.constraints:
+            total += len(self.constraints[key])
         
         print(total)
         return  
@@ -55,7 +55,7 @@ class SudokuCSP():
     I think we can just define this function to 
     compare them.
     Anytime you need to check constraints on two 
-    variables, just send the arc here.
+    variables, just send the arc values here.
     '''
     def constraintCheck(self, Xi, Xj):
         return Xi != Xj
@@ -103,10 +103,10 @@ Main AC-3 algorithm.
 Returns True or False dependent upon whether the algorithm failed or not.
 '''        
 def AC3_Main(csp):   
-    #initiate a queue to store all current arcs
+    #initiate a queue to store all current constraint arcs as two sets of coordinates ((x1, x2), (y1, y2))
     queue = deque()
-    for key in csp.arcs:
-        for neighbor in csp.arcs[key]:
+    for key in csp.constraints:
+        for neighbor in csp.constraints[key]:
             queue.append((key, neighbor))
     
     #iterate through queue until it isnt empty
@@ -116,13 +116,13 @@ def AC3_Main(csp):
         if AC3_Revise(csp, i,j):
             if len(csp.domain[i]) == 0:
                 return False
-            for key in csp.arcs[i]:
+            for key in csp.constraints[i]:
                 queue.append((key, i))
     return True
     
 def AC3_Revise(csp, i, j):
     revised = False
-    tbr = []         #to be removed
+    tbr = [] #to be removed
     for x in csp.domain[i]:
         valid = False
         for y in csp.domain[j]:
@@ -138,8 +138,7 @@ def AC3_Revise(csp, i, j):
         
         
 
-fileName = input("Which sudoku file to open? ")
-        
+fileName = input("Which sudoku file to open? ")        
 sudoku = SudokuCSP(open("data/"+fileName, "r"))
 print("---------------------------\nCurrent Sudoku Problem: \n---------------------------")
 print(sudoku)

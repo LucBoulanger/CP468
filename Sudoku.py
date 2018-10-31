@@ -1,4 +1,6 @@
 from collections import deque
+import copy
+import sys
 
 class sudokuCSP():
     def __init__(self, file):
@@ -100,9 +102,35 @@ def revise(csp, Xi, Xj):
             revised = True
     #indicates if a value has been removed from the domain or not
     return revised
-    
+  
+expanded = 0 
+  
+def backTrackingSearch(csp):
+    # empty is a list of tuples where a given value = ((x,y), [domain of (x,y)])
+    # representing all unanswered variables
+    DFS = deque()
+    DFS.append(copy.deepcopy(csp))
+    global expanded
+    while DFS:
+        expanded += 1
+        state = DFS.pop()
+        if AC3(state):
+            if state.isSolved(): return state
+            nextUnassigned = None
+            for variable in state.domain:
+                if len(state.domain[variable]) > 1:
+                    nextUnassigned = copy.deepcopy(variable)
+                    break
+            for x in state.domain[nextUnassigned]:
+                successorState = copy.deepcopy(state)
+                successorState.domain[nextUnassigned] = [x]
+                DFS.append(successorState)
+    return None
+ 
+ 
 #Main method
-sudoku = sudokuCSP(open("data/ac3solvable.txt","r"))
+sys.setrecursionlimit(10000)
+sudoku = sudokuCSP(open("data/short.txt","r"))
 print("\n\n\nCurrent sudoku puzzle: ")
 print(sudoku)
 print("\nAttempting AC-3 algorithm: ")
@@ -118,4 +146,6 @@ print("\nSudoku not solved by AC-3...")
 print("\nEquivelent arc-consistent sudoku puzzle:\n", sudoku, "\nWith domain set: ")
 sudoku.printDomain()
 print("\nAttempting backtracking algorithm:")
+print(backTrackingSearch(sudoku))
+print ("nodes expanded: ", expanded)
 

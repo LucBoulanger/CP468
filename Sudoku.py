@@ -1,10 +1,6 @@
 from collections import deque
 
-class SudokuCSP():
-    '''
-        domain      = dictionary where Key = (x, y), Value = [domain]
-        constraints = dictionary where Key = (x, y), Value = [Neighbors...]
-    '''
+class sudokuCSP():
     def __init__(self, file):
         self.domain = {}
         self.constraints = {}
@@ -15,54 +11,30 @@ class SudokuCSP():
                 if char != "\n":
                     self.constraints[(x,y)] = []
                     if char == "*":
+                        #if no value give, domain becomes 1 to 9
                         self.domain[(x,y)] = [1,2,3,4,5,6,7,8,9]
                     else:
+                        #otherwise, domain is limited to the value given
                         self.domain[(x,y)] = [int(char)]
                 y += 1
             x += 1
             y = 0
-        self.populateConstraints()    
-        return    
-    
-    '''
-    Initial list of all possible constraint arcs.
-    Constraint arcs are expressed as dictionary where Key = (x, y), Value = [Neighbors...]
-        - thus all values in the sudoku puzzle are given constraints to their neighbors
-        - this is used to gather all neighbors of a given value when needed.
-    '''
-    def populateConstraints(self):
-        for key in self.constraints:
-            for i in range(0,9):
-                for j in range(0,9):
-                    if (i != key[0] or j != key[1]) and (i == key[0] or j == key[1] or (i in range((key[0]//3)*3,(key[0]//3)*3+3) and j in range((key[1]//3)*3,(key[1]//3)*3+3))):
-                        # clears some unnecessary constraints that don't need to be checked as they are already established 
-                        if not (len(self.domain[key]) == 1 and len(self.domain[(i,j)]) == 1):
-                            self.constraints[key].append((i,j))
-                        elif self.domain[key][0] == self.domain[(i,j)][0]:
-                            print("Invalid sudoku puzzle, exiting program.")
-                            exit()
-        total = 0
-        for key in self.constraints: 
-            self.constraints[key] = list(set(self.constraints[key]))
-        for key in self.constraints:
-            total += len(self.constraints[key])
+
+        #adds all possible constrait arcs 
+        for variable in self.constraints:
+            #go through all 81 variables
+            for i in range (0,9):
+                for j in range (0,9):
+                    #gathers all points the current 'variable' is a neighbor to (row, column, and box for the three or parts respectively)
+                    if (variable[0] == i and variable[1] != j) or (variable[0] != i and variable[1] == j) or (variable[0] in range((i//3)*3, (i//3)*3 + 3) and variable[1] in range((j//3)*3, (j//3)*3 + 3)):
+                        #add point to constraints as an arc from key to value
+                        if not(variable[0] == i and variable[1] == j):
+                            self.constraints[variable].append((i,j))
+        return
+
+    def constraintCheck(self, x, y):
+        return x != y
         
-        print(total)
-        return  
-        
-    '''
-    Since all constraints are between two integers, 
-    I think we can just define this function to 
-    compare them.
-    Anytime you need to check constraints on two 
-    variables, just send the arc values here.
-    '''
-    def constraintCheck(self, Xi, Xj):
-        return Xi != Xj
-      
-    '''
-    Prints domains, for debugging
-    '''
     def printDomain(self):
         for key in self.domain:
             print("{} -> {}".format(key, self.domain[key]))
@@ -74,10 +46,6 @@ class SudokuCSP():
                 return False
         return True
     
-    '''
-    Prints the current sudoku problem by the values
-    in the familiar sudoku format.
-    ''' 
     def __str__(self):
         s = ""
         count = 0
@@ -96,60 +64,58 @@ class SudokuCSP():
                 s += "|\n"
                 rows += 1
                 count = 0
-        return s + "-------------\n"
-
-'''
-Main AC-3 algorithm. 
-Returns True or False dependent upon whether the algorithm failed or not.
-'''        
-def AC3_Main(csp):   
+        return s + "-------------"
+        
+def AC3(csp):   
     #initiate a queue to store all current constraint arcs as two sets of coordinates ((x1, x2), (y1, y2))
     queue = deque()
-    for key in csp.constraints:
-        for neighbor in csp.constraints[key]:
-            queue.append((key, neighbor))
+    for variable in csp.constraints:
+        for neighbor in csp.constraints[variable]:
+            queue.append((variable, neighbor))
     
     #iterate through queue until it isnt empty
     while queue:
-        #print("Queue length: {}".format(len(queue)))
-        i,j = queue.popleft()
-        if AC3_Revise(csp, i,j):
-            if len(csp.domain[i]) == 0:
+        #pop the next arc from the queue
+        Xi,Xj = queue.popleft()
+        #check for revised domains
+        if revise(csp, Xi,Xj):
+            #if the domain has become 0, then no solution is possible without violating constraints
+            if len(csp.domain[Xi]) == 0:
                 return False
-            for key in csp.constraints[i]:
-                queue.append((key, i))
+            #add new arcs to queue as the domain of Xi has been updated
+            for variable in csp.constraints[Xi]:
+                # but don't include the arc for (Xi,Xj) as that is the arc we just accounted for
+                if not (variable[0] == Xj[0] and variable[1] == Xj[1]):
+                    queue.append((variable, Xi))
+    #if the queue has been emptied, the algorithm has succeeded
     return True
     
-def AC3_Revise(csp, i, j):
+def revise(csp, Xi, Xj):
     revised = False
-    tbr = [] #to be removed
-    for x in csp.domain[i]:
-        valid = False
-        for y in csp.domain[j]:
-            if csp.constraintCheck(x,y):
-                valid = True
-        if not valid:
-            tbr.append(x)
+    #go through all x values in domain of Xi
+    for x in csp.domain[Xi][:]:
+        #if x does not satisfy the constraint for any possible y in the domain of Xj, then x must be removed
+        if not any([csp.constraintCheck(x, y) for y in csp.domain[Xj]]):
+            csp.domain[Xi].remove(x)
             revised = True
-    if revised:
-        for x in tbr:
-            csp.domain[i].remove(x)
+    #indicates if a value has been removed from the domain or not
     return revised
-        
-        
-
-fileName = input("Which sudoku file to open? ")        
-sudoku = SudokuCSP(open("data/"+fileName, "r"))
-print("---------------------------\nCurrent Sudoku Problem: \n---------------------------")
+    
+#Main method
+sudoku = sudokuCSP(open("data/ac3solvable.txt","r"))
+print("\n\n\nCurrent sudoku puzzle: ")
 print(sudoku)
-print("Sudoku solved? {}\n".format(sudoku.isSolved()))
-if not sudoku.isSolved():
-    print("Attempting AC-3 Algorithm...")
-    if not AC3_Main(sudoku):
-        print("Could not solve sudoku, one or more domain became empty.\n")
-    else:
-        ("Sudoku solved? {}\n".format(sudoku.isSolved()))
-        print(sudoku)
-#print("---------------------------\nDomain for each Variable: \n---------------------------")
-#sudoku.printDomain()
-print()
+print("\nAttempting AC-3 algorithm: ")
+if not AC3(sudoku):
+    print("\nPuzzle not arc-consistent. Cannot solve, exiting.")
+    exit()
+if sudoku.isSolved():
+    print("\nSudoku solved by AC-3.")
+    print(sudoku)
+    print("\n")
+    exit()
+print("\nSudoku not solved by AC-3...")
+print("\nEquivelent arc-consistent sudoku puzzle:\n", sudoku, "\nWith domain set: ")
+sudoku.printDomain()
+print("\nAttempting backtracking algorithm:")
+

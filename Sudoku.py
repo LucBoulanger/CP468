@@ -1,13 +1,28 @@
 from collections import deque
 import copy
 import sys
+import time
 
 class sudokuCSP():
     def __init__(self, file):
+        '''
+        Initializes a sudoku CSP problem.
+        
+        Domain is a dictionary where keys are coordinates (x, y) and values are the domain.
+            - Default domain values are [1,2,3,4,5,6,7,8,9] for empty squares, and [i] for non-empty squares assigned value i.
+            - Sudoku Variable values are inferred from the domain. 
+                If length(domain[key]) > 1, then value at key is unassigned. 
+                if length(domain[key]) = 1, then the value at key is assigned domain[key][0]. 
+                if length(domain[key]) = 0, then no value is possible.
+        constraints is a dictionary where keys are coordinates (x, y) and values are that coordinates neighbors.
+            - coordinates are neighbors to other coordinates that share a row, column, and/or 3x3 box.
+        constraints are checked by looking at values at coordinates (in domain) in constraints 
+        '''
         self.domain = {}
         self.constraints = {}
         x = 0
         y = 0
+        #read puzzle from file
         for line in file:
             for char in line:
                 if char != "\n":
@@ -34,40 +49,46 @@ class sudokuCSP():
                             self.constraints[variable].append((i,j))
         return
 
+    # check two values. If two values are equal, then they violate the binary isDifferent contraint between the
+    # coordinate pairs the values came from.
     def constraintCheck(self, x, y):
         return x != y
-        
+      
+    # prints domain.
     def printDomain(self):
         for key in self.domain:
             print("{} -> {}".format(key, self.domain[key]))
         return
       
+    #determines if current CSP is solved
     def isSolved(self):
         for key in self.domain:
+            # only solved if length of every domain is 1
             if len(self.domain[key]) != 1:
                 return False
         return True
     
+    #prints the puzzle nice and pretty like
     def __str__(self):
         s = ""
         count = 0
         rows = 0
         for key in self.domain:
             if (rows == 0 or rows == 3 or rows == 6) and count == 0:
-                s += "-------------\n"
+                s += "----------------------\n"
             if count == 0 or count == 3 or count == 6:
                 s += "|"
             if len(self.domain[key]) == 1:
-                s += str(self.domain[key][0])
+                s += str(self.domain[key][0]) + " "
             else:
-                s += "*"
+                s += "* "
             count += 1
             if count == 9:
                 s += "|\n"
                 rows += 1
                 count = 0
-        return s + "-------------"
-        
+        return s + "----------------------"
+  
 def AC3(csp):   
     #initiate a queue to store all current constraint arcs as two sets of coordinates ((x1, x2), (y1, y2))
     queue = deque()
@@ -103,34 +124,47 @@ def revise(csp, Xi, Xj):
     #indicates if a value has been removed from the domain or not
     return revised
   
-expanded = 0 
+created = 0 
   
 def backTrackingSearch(csp):
     # empty is a list of tuples where a given value = ((x,y), [domain of (x,y)])
     # representing all unanswered variables
     DFS = deque()
     DFS.append(copy.deepcopy(csp))
-    global expanded
+    #number of expanded nodes we look at
+    global created
+    #while the queue is not empty, there are possible solutions that need to be analyzed
     while DFS:
-        expanded += 1
         state = DFS.pop()
+        #check if the current state is arwc-consistent, if not, it is an invalid state and should be discarded
         if AC3(state):
+            #if the state is solved, then the puzzle has been completed
             if state.isSolved(): return state
-            nextUnassigned = None
+            #otherwise, grab the next unassigned variable to expand (as (M)ost (C)onstrained (V)ariable)
+            mostConstricted = None
+            domainsize = 10 # more than any domain can be, so that there will always me a MCV
+            #grab the variable with the smallest domain size:
             for variable in state.domain:
-                if len(state.domain[variable]) > 1:
-                    nextUnassigned = copy.deepcopy(variable)
-                    break
-            for x in state.domain[nextUnassigned]:
+                length = len(state.domain[variable])
+                if domainsize > length > 1:
+                    mostConstricted = variable
+                    domainsize = length
+            #for x in state.domain[mostConstricted]:
+            for x in orderDomainValues(state, mostConstricted):
                 successorState = copy.deepcopy(state)
-                successorState.domain[nextUnassigned] = [x]
+                successorState.domain[mostConstricted] = [x]
+                created += 1
                 DFS.append(successorState)
     return None
  
+#Didn't implement LCV,
+def orderDomainValues(csp, variable):
+    unordered = csp.domain[variable]
+    return unordered
  
 #Main method
 sys.setrecursionlimit(10000)
-sudoku = sudokuCSP(open("data/short.txt","r"))
+sudoku = sudokuCSP(open("data/2010.txt","r"))
 print("\n\n\nCurrent sudoku puzzle: ")
 print(sudoku)
 print("\nAttempting AC-3 algorithm: ")
@@ -146,6 +180,10 @@ print("\nSudoku not solved by AC-3...")
 print("\nEquivelent arc-consistent sudoku puzzle:\n", sudoku, "\nWith domain set: ")
 sudoku.printDomain()
 print("\nAttempting backtracking algorithm:")
+t1 = time.time()
 print(backTrackingSearch(sudoku))
-print ("nodes expanded: ", expanded)
-
+t2 = time.time()
+print ("nodes created: ", created)
+if (t2 - t1 >= 300):
+    print("Yikes... ", end="")
+print("Backtracking search completed in: {} seconds.".format(t2-t1))

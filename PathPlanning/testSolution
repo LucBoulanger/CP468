@@ -11,26 +11,28 @@ class Node():
         return self.position == other.position
 
 def astar(mapp, startPos, endPos):
-    
+    #create start, end node
     startPos_node = Node(None, startPos)
     startPos_node.currTostartPos = startPos_node.currToEnd = startPos_node.totCost = 0
     end_node = Node(None, endPos)
     end_node.currTostartPos = end_node.currToEnd = end_node.totCost = 0
+    #lists for open moves, taken moves
     possibleMoves = []
     pathTaken = []
     possibleMoves.append(startPos_node)
 
     while len(possibleMoves) > 0:
+        #sets current node
         current_node = possibleMoves[0]
         current_index = 0
         for index, item in enumerate(possibleMoves):
             if item.totCost < current_node.totCost:
                 current_node = item
                 current_index = index
-                
+        #removes current node from possible moves adds it to path taken
         possibleMoves.pop(current_index)
         pathTaken.append(current_node)
-
+        #if path taken reaches goal node
         if current_node == end_node:
             path = []
             current = current_node
@@ -40,29 +42,33 @@ def astar(mapp, startPos, endPos):
             return path[::-1]
 
         children = []
+        #all possible moves for child
         for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-            
+            #gets position
             node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+            #checks if its in range of map
             if node_position[0] > (len(mapp.map) - 1) or node_position[0] < 0 or node_position[1] > (len(mapp.map[len(mapp.map)-1]) -1) or node_position[1] < 0:
                 continue
+            #check to see if path is not blocked
             if mapp.map[node_position[0]][node_position[1]] != 0:
                 continue
-
+            #if all above conditions met creates the node
             new_node = Node(current_node, node_position)
             children.append(new_node)
-
+        #if child in already in taken path do not add
         for child in children:
             for closed_child in pathTaken:
                 if child == closed_child:
                     continue
+            #sets child costs
             child.currTostartPos = current_node.currTostartPos + 1
             child.currToEnd = ((child.position[0] - end_node.position[0]) ** 2) + ((child.position[1] - end_node.position[1]) ** 2)
             child.totCost = child.currTostartPos + child.currToEnd
-
+            #if child in already in possible moves do not add
             for open_node in possibleMoves:
                 if child == open_node and child.currTostartPos > open_node.currTostartPos:
                     continue
-                  
+            #adds child if all conditions are met
             possibleMoves.append(child)
 
 def main():

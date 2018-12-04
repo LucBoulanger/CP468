@@ -1,7 +1,8 @@
 import mapping
 import copy
-import time
-import pygame, os 
+import pygame
+import math
+import os
 
 os.environ['SDL_VIDEO_WINDOW_POS'] = "0,50"
           
@@ -9,6 +10,7 @@ def main():
     pygame.init()
     pygame.display.set_caption('Path Planning')
 
+    WHITE = ( 255, 255, 255)
     
     HEIGHT = pygame.display.Info().current_h - 100
     WIDTH  = pygame.display.Info().current_w - 100
@@ -23,30 +25,38 @@ def main():
     WIDTH = square * len(map.map[0])
     HEIGHT = square * len(map.map)
     
+    if square < 10:
+        square = 5
+        HEIGHT = pygame.display.Info().current_h - 100
+        WIDTH  = pygame.display.Info().current_w - 100 
+    
     #Display the PP window
     surface = pygame.display.set_mode((WIDTH,HEIGHT))    
-
+    
     # draw the map
     map.draw(surface, square)
     pygame.display.flip()
 
     while True:
-        time.sleep(1)
         #perform A* for each robot
         for i in range(len(map.robots)):  
+            print("Working on robot ", i)
+            beginning = copy.deepcopy(map.robots[i])
             possibleMoves = []
             visited = []
             possibleMoves.append(map.robots[i])
             found = False
             #main A* while loop
             while len(possibleMoves) > 0:
-                time.sleep(.01)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                            pygame.quit()
                 #find the best looking node to expand
                 currentNode = possibleMoves[0]
-                currentNodeCost = currentNode.pathCost +  ((currentNode.position[0] - map.goal[0]) ** 2) + ((currentNode.position[1] - map.goal[1]) ** 2)
+                currentNodeCost = currentNode.pathCost + (currentNode.position[0] - map.goal[0])**2 + (currentNode.position[1] - map.goal[1])**2
                 currentIndex = 0
                 for index, item in enumerate(possibleMoves):
-                    itemCost = item.pathCost +  ((item.position[0] - map.goal[0]) ** 2) + ((item.position[1] - map.goal[1]) ** 2)
+                    itemCost = item.pathCost +  (item.position[0] - map.goal[0])**2 + (item.position[1] - map.goal[1])**2
                     if itemCost < currentNodeCost:
                         currentNode = item
                         currentNodeCost = itemCost
@@ -70,23 +80,38 @@ def main():
                     if nodePosition[0] == map.goal[0] and nodePosition[1] == map.goal[1]:
                         map.robots[i] = mapping.Node(nodePosition, currentNode)
                         found = True
-                        time.sleep(.01)
-                        map.draw(surface, square)
-                        pygame.display.flip()
+                        #map.draw(surface, square)
+                        #pygame.display.flip()
                         break
-                    print("appending: ", nodePosition)
                     if nodePosition not in visited:
+                        visited.append(nodePosition)
                         possibleMoves.append(mapping.Node(nodePosition, currentNode))
                 if found:
                     break
             if not found:
+                map.robots[i] = beginning
                 print("queue emptied")
+            map.draw(surface, square)
+            pygame.display.flip()
             found = False
         break
     while True:
-        ev = pygame.event.poll()    # Look for any event
-        if ev.type == pygame.QUIT:  # Window close button clicked?
-            break                   #   ... leave game loop
+        surface.fill(WHITE)
+        map.draw(surface, square)
+        pygame.display.flip()
+        
+        for ev in pygame.event.get():   # Look for any event
+            if ev.type == pygame.QUIT:  # Window close button clicked?
+                pygame.quit()           #   ... leave game loop
+            if ev.type == pygame.KEYDOWN:
+                if ev.key == pygame.K_LEFT:
+                    map.offsetX -= 1
+                if ev.key == pygame.K_RIGHT:
+                    map.offsetX += 1
+                if ev.key == pygame.K_UP:
+                    map.offsetY -= 1
+                if ev.key == pygame.K_DOWN:
+                    map.offsetY += 1
     pygame.quit()
     data.close()
 

@@ -35,8 +35,7 @@ class Map():
                       if map[x][y] == 0: map[x][y] is a free space. 
     '''
     def __init__(self, file):
-        self.dimensions = [int(i) for i in file.readline().split(" ")]    
-        
+        self.dimensions = [int(i) for i in file.readline().split(" ")]            
         self.robots = [[int(char) for char in file.readline().split(" ")] for i in range(int(file.readline()))]
         #invert y coordinate of robots for correct coordinate positioning
         for i in range(len(self.robots)):
@@ -49,6 +48,9 @@ class Map():
         self.goal = [int(i) for i in file.readline().split(" ")]
         self.goal[1] = (self.dimensions[0] - 1) - self.goal[1]
         self.map = [[int(char) for char in line if char != '\n'] for line in file]
+        self.offsetX = 0
+        self.offsetY = 0
+    
     
     def draw(self, surface, square):
         #draw black and white squares
@@ -57,11 +59,11 @@ class Map():
                 color = WHITE
                 if self.map[row][col] == 1:
                     color = BLACK
-                the_square = (col*square, row*square, square, square)
+                the_square = ((col+self.offsetX)*square, (row+self.offsetY)*square, square, square)
                 surface.fill(color, the_square)
                 pygame.draw.rect(surface, BLACK, the_square, 1)       
         #draw goal square
-        the_square = (self.goal[0]*square, self.goal[1]*square, square, square)
+        the_square = ((self.goal[0]+self.offsetX)*square, (self.goal[1]+self.offsetY)*square, square, square)
         surface.fill(GOLD, the_square)
         pygame.draw.rect(surface, BLACK, the_square, 1)
         #draw current robot paths
@@ -71,7 +73,7 @@ class Map():
             currentNode = self.robots[i]
             while currentNode is not None:
                 robot_pos = currentNode.position
-                surface.blit(rect, (robot_pos[0]*square, robot_pos[1]*square))
+                surface.blit(rect, ((robot_pos[0]+self.offsetX)*square, (robot_pos[1]+self.offsetY)*square))
                 currentNode = currentNode.child
     
     def printDetails(self):

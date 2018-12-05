@@ -53,10 +53,10 @@ def main():
                             pygame.quit()
                 #find the best looking node to expand
                 currentNode = possibleMoves[0]
-                currentNodeCost = currentNode.pathCost + (currentNode.position[0] - map.goal[0])**2 + (currentNode.position[1] - map.goal[1])**2
+                currentNodeCost = currentNode.pathCost + 1.1*(abs(currentNode.position[0] - map.goal[0]) + abs(currentNode.position[1] - map.goal[1]))
                 currentIndex = 0
                 for index, item in enumerate(possibleMoves):
-                    itemCost = item.pathCost +  (item.position[0] - map.goal[0])**2 + (item.position[1] - map.goal[1])**2
+                    itemCost = item.pathCost +  1.001*(abs(item.position[0] - map.goal[0]) + abs(item.position[1] - map.goal[1]))
                     if itemCost < currentNodeCost:
                         currentNode = item
                         currentNodeCost = itemCost
@@ -85,6 +85,8 @@ def main():
                         break
                     if nodePosition not in visited:
                         visited.append(nodePosition)
+                        if i == 0:
+                            map.visited.append(nodePosition)
                         possibleMoves.append(mapping.Node(nodePosition, currentNode))
                 if found:
                     break

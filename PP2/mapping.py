@@ -1,17 +1,17 @@
 import pygame
 import copy
 
-BLACK = (0,0,0)
-WHITE = (255,255,255)
-GOLD  = (255,215,0)
-COLORS = [(255,0,0,80),    # Red
+BLACK   = (0,0,0)
+WHITE   = (255,255,255)
+GOLD    = (255,215,0)
+COLORS  = [(255,0,0,80),    # Red
           (255,165,0,80),  # Orange
           (255,255,0,80),  # Yellow
           (0,255,0,80),    # Green
-          (0,0,255,80),    # Blue
           (255,0,255,80),  # Magenta
+          (0,0,255,80),    # Blue
           (128,0,128,80)]  # Purple
-
+VISITED = (0,0,255,60)
 class Node():
     def __init__(self, position, child = None):
         self.position = position
@@ -50,7 +50,7 @@ class Map():
         self.map = [[int(char) for char in line if char != '\n'] for line in file]
         self.offsetX = 0
         self.offsetY = 0
-    
+        self.visited = []
     
     def draw(self, surface, square):
         #draw black and white squares
@@ -75,7 +75,12 @@ class Map():
                 robot_pos = currentNode.position
                 surface.blit(rect, ((robot_pos[0]+self.offsetX)*square, (robot_pos[1]+self.offsetY)*square))
                 currentNode = currentNode.child
-    
+        for point in self.visited:
+            rect = pygame.Surface((square,square), pygame.SRCALPHA, 32)
+            rect.fill(VISITED)
+            robot_pos = point
+            surface.blit(rect, ((robot_pos[0]+self.offsetX)*square, (robot_pos[1]+self.offsetY)*square))
+            
     def printDetails(self):
         print(self.dimensions)
         print(self.robots)

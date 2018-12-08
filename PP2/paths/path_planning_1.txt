@@ -1,0 +1,12 @@
+Working on robot  0
+queue emptied
+(7, 1)
+Working on robot  1
+queue emptied
+(10, 10)
+Working on robot  2
+queue emptied
+(19, 10)
+Working on robot  3
+queue emptied
+(10, 1)

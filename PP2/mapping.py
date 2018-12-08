@@ -26,15 +26,19 @@ class Node():
 class Map():
     '''
         dimensions -> [x, y] as a list containing the width (x) and the height (y) of the map.
-        robots     -> [[x,y], [x,y]] as a list of starting coordinate pairs [x, y] of all 
+        robots     -> [Node(), Node()] as a list of Nodes representing the paths for each of the  
                       robots in the map.
         goal       -> [x, y] as a list containing the coordinate pair representing the goal 
                       location.
         map        -> [[]] as the two dimensional list containing map information. 
                       if map[x][y] == 1: map[x][y] contains an obstruction.
                       if map[x][y] == 0: map[x][y] is a free space. 
+        offsetX    -> Integer representing the square offset for the X coordinate when displaying the map.
+        offsetY    -> Integer representing the square offset for the Y coordinate when displaying the map.
+        visited    -> [(x, y)] list containing coordinate tuples of all points visited by robot 0.
     '''
     def __init__(self, file):
+        # read in map data from file
         self.dimensions = [int(i) for i in file.readline().split(" ")]            
         self.robots = [[int(char) for char in file.readline().split(" ")] for i in range(int(file.readline()))]
         #invert y coordinate of robots for correct coordinate positioning
@@ -75,18 +79,21 @@ class Map():
                 robot_pos = currentNode.position
                 surface.blit(rect, ((robot_pos[0]+self.offsetX)*square, (robot_pos[1]+self.offsetY)*square))
                 currentNode = currentNode.child
+        #draw all visited points
         for point in self.visited:
             rect = pygame.Surface((square,square), pygame.SRCALPHA, 32)
             rect.fill(VISITED)
             robot_pos = point
             surface.blit(rect, ((robot_pos[0]+self.offsetX)*square, (robot_pos[1]+self.offsetY)*square))
-            
+    
+    #prints details of map, used in debugging
     def printDetails(self):
-        print(self.dimensions)
-        print(self.robots)
-        print(self.goal)
-        for i in range(len(self.map)):
-            for j in range(len(self.map[0])):
-                print(self.map[i][j], end=", ")
-            print()
+        print()
+        #print(self.dimensions)
+        #print(self.robots)
+        #print(self.goal)
+        #for i in range(len(self.map)):
+        #    for j in range(len(self.map[0])):
+        #        print(self.map[i][j], end=", ")
+        #    print()
             
